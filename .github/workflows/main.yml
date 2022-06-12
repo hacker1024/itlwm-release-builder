@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  BUILD_OUTPUT: 'build/Build/Products/Debug'
+  BUILD_OUTPUT: 'build/Build/Products/Release'
 
 jobs:
 

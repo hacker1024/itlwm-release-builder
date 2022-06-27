@@ -3,9 +3,10 @@ name: CD
 on:
   push:
     branches: master
+  workflow_dispatch:
 
 env:
-  BUILD_OUTPUT: 'build/Build/Products/Debug'
+  BUILD_OUTPUT: 'build/Build/Products/Release'
 
 jobs:
 
@@ -32,28 +33,23 @@ jobs:
         else
           echo "OLD_PRE_TAG=$CUR_TAG" >> $GITHUB_ENV
         fi
-
     - name: Install MacKernelSDK
       run: |
         git clone --depth=1 https://github.com/acidanthera/MacKernelSDK.git
-
     - name: Build itlwm
       run: |
-        xcodebuild -scheme itlwm -configuration Debug -derivedDataPath build GIT_COMMIT=_${SHORT_SHA} | xcpretty && exit ${PIPESTATUS[0]}
-
+        xcodebuild -scheme itlwm -configuration Release -derivedDataPath build GIT_COMMIT=_${SHORT_SHA} | xcpretty && exit ${PIPESTATUS[0]}
     - name: Build AirportItlwm
       run: |
-        xcodebuild -scheme "AirportItlwm (all)" -configuration Debug -derivedDataPath build GIT_COMMIT=_${SHORT_SHA} | xcpretty && exit ${PIPESTATUS[0]}
-
+        xcodebuild -scheme "AirportItlwm (all)" -configuration Release -derivedDataPath build GIT_COMMIT=_${SHORT_SHA} | xcpretty && exit ${PIPESTATUS[0]}
     - name: Pack Artifacts
       run: |
         cd $BUILD_OUTPUT
-          zip -r itlwm-v${ITLWM_VER}-DEBUG-alpha-${SHORT_SHA}.zip itlwm.kext
+          zip -r itlwm-v${ITLWM_VER}-RELEASE-alpha-${SHORT_SHA}.zip itlwm.kext
           while read -r tgt ; do
-            zip -r AirportItlwm-${tgt// /_}-v${ITLWM_VER}-DEBUG-alpha-${SHORT_SHA}.zip "$tgt"
+            zip -r AirportItlwm-${tgt// /_}-v${ITLWM_VER}-RELEASE-alpha-${SHORT_SHA}.zip "$tgt"
           done < <(find . -mindepth 1 -maxdepth 1 -type d -not -path "*.kext" | cut -c 3-)
         cd -
-
     - name: Generate Prerelease Release Notes
       run: |
         echo '### Disclaimer:' >> ReleaseNotes.md
@@ -62,7 +58,6 @@ jobs:
         echo 'If you discovered an issue and you do not have debugging skills, please check with the [Gitter Chat Room](https://gitter.im/OpenIntelWireless/itlwm) in advance before opening an Issue.' >> ReleaseNotes.md
         echo '### The latest five updates are:' >> ReleaseNotes.md
         git log -"5" --format="- %H %s" | sed '/^$/d' >> ReleaseNotes.md
-
     - name: Delete Old Prerelease
       uses: dev-drprasad/delete-tag-and-release@v0.2.0
       with:

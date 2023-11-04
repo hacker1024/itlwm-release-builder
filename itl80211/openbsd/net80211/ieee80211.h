@@ -356,24 +356,35 @@ ieee80211_get_qos(const struct ieee80211_frame *wh)
 }
 
 static __inline int
-ieee80211_is_ctl(const struct ieee80211_frame *wh)
+ieee80211_is_ctl(uint16_t fc)
 {
-    return (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) ==
-           IEEE80211_FC0_TYPE_CTL;
+    return (fc & htole16(IEEE80211_FC0_TYPE_MASK)) ==
+            htole16(IEEE80211_FC0_TYPE_CTL);
 }
 
 static __inline int
-ieee80211_is_data(const struct ieee80211_frame *wh)
+ieee80211_is_data(uint16_t fc)
 {
-    return (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) ==
-           IEEE80211_FC0_TYPE_DATA;
+    return (fc & htole16(IEEE80211_FC0_TYPE_MASK)) ==
+            htole16(IEEE80211_FC0_TYPE_DATA);
 }
 
 static __inline int
-ieee80211_is_mgmt(const struct ieee80211_frame *wh)
+ieee80211_is_mgmt(uint16_t fc)
 {
-    return (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) ==
-           IEEE80211_FC0_TYPE_MGT;
+    return (fc & htole16(IEEE80211_FC0_TYPE_MASK)) ==
+           htole16(IEEE80211_FC0_TYPE_MGT);
+}
+
+static __inline int
+ieee80211_is_data_qos(uint16_t fc)
+{
+    /*
+     * mask with QOS_DATA rather than IEEE80211_FCTL_STYPE as we just need
+     * to check the one bit
+     */
+    return (fc & htole16(IEEE80211_FC0_TYPE_MASK | IEEE80211_FC0_SUBTYPE_QOS)) ==
+           htole16(IEEE80211_FC0_TYPE_DATA | IEEE80211_FC0_SUBTYPE_QOS);
 }
 
 static __inline int
@@ -1514,6 +1525,23 @@ struct ieee80211_csa_ie {
     uint8_t        csa_mode;        /* Channel Switch Mode */
     uint8_t        csa_newchan;        /* New Channel Number */
     uint8_t        csa_count;        /* Channel Switch Count */
+} __packed;
+
+/**
+ * struct ieee80211_vht_operation - VHT operation IE
+ *
+ * This structure is the "VHT operation element" as
+ * described in 802.11ac D3.0 8.4.2.161
+ * @chan_width: Operating channel width
+ * @center_freq_seg0_idx: center freq segment 0 index
+ * @center_freq_seg1_idx: center freq segment 1 index
+ * @basic_mcs_set: VHT Basic MCS rate set
+ */
+struct ieee80211_vht_operation {
+    uint8_t chan_width;
+    uint8_t center_freq_seg0_idx;
+    uint8_t center_freq_seg1_idx;
+    uint16_t basic_mcs_set;
 } __packed;
 
 #define IEEE80211_HE_PPE_THRES_MAX_LEN        25

@@ -25,6 +25,7 @@ detach(IOPCIDevice *device)
     
     for (int txq_i = 0; txq_i < nitems(sc->txq); txq_i++)
         iwm_free_tx_ring(sc, &sc->txq[txq_i]);
+    iwm_rs_free(sc);
     iwm_free_rx_ring(sc, &sc->rxq);
     iwm_dma_contig_free(&sc->ict_dma);
     iwm_dma_contig_free(&sc->kw_dma);
@@ -106,6 +107,10 @@ IOReturn ItlIwm::
 disable(IONetworkInterface *netif)
 {
     struct _ifnet *ifp = &com.sc_ic.ic_ac.ac_if;
+    if (!(ifp->if_flags & IFF_UP)) {
+        XYLog("%s already in diactivating state\n", __FUNCTION__);
+        return kIOReturnSuccess;
+    }
     ifp->if_flags &= ~IFF_UP;
     iwm_activate(&com, DVACT_QUIESCE);
     return kIOReturnSuccess;

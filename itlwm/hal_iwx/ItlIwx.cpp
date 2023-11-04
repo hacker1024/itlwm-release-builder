@@ -227,6 +227,10 @@ IOReturn ItlIwx::disable(IONetworkInterface *netif)
 {
     XYLog("%s\n", __FUNCTION__);
     struct _ifnet *ifp = &com.sc_ic.ic_ac.ac_if;
+    if (!(ifp->if_flags & IFF_UP)) {
+        XYLog("%s already in diactivating state\n", __FUNCTION__);
+        return kIOReturnSuccess;
+    }
     ifp->if_flags &= ~IFF_UP;
     iwx_activate(&com, DVACT_QUIESCE);
     return kIOReturnSuccess;
@@ -4072,10 +4076,6 @@ iwx_setup_he_rates(struct iwx_softc *sc)
             IEEE80211_HE_MAC_CAP5_UL_2x996_TONE_RU |
             IEEE80211_HE_MAC_CAP5_HE_DYNAMIC_SM_PS |
             IEEE80211_HE_MAC_CAP5_HT_VHT_TRIG_FRAME_RX,
-        .phy_cap_info[0] =
-            IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_IN_2G |
-            IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
-            IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G,
         .phy_cap_info[1] =
             IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
             IEEE80211_HE_PHY_CAP1_DEVICE_CLASS_A |
@@ -8728,7 +8728,7 @@ iwx_rs_fw_get_config_flags(struct iwx_softc *sc)
     }
     
     if (iwx_num_of_ant(iwx_fw_valid_tx_ant(sc)) > 1) {
-        if (ic->ic_flags & IEEE80211_F_HEON &&
+        if ((ni->ni_flags & IEEE80211_NODE_HE) &&
             ni->ni_he_cap_elem.phy_cap_info[2] &
             IEEE80211_HE_PHY_CAP2_STBC_RX_UNDER_80MHZ) {
             flags |= IWX_TLC_MNG_CFG_FLAGS_STBC_MSK;
@@ -8743,17 +8743,17 @@ iwx_rs_fw_get_config_flags(struct iwx_softc *sc)
         flags |= IWX_TLC_MNG_CFG_FLAGS_LDPC_MSK;
     
     /* consider LDPC support in case of HE */
-    if ((ic->ic_flags & IEEE80211_F_HEON) && 
+    if ((ni->ni_flags & IEEE80211_NODE_HE) &&
         (ni->ni_he_cap_elem.phy_cap_info[1] &
         IEEE80211_HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD))
         flags |= IWX_TLC_MNG_CFG_FLAGS_LDPC_MSK;
     
-    if ((ic->ic_flags & IEEE80211_F_HEON) &&
+    if ((ni->ni_flags & IEEE80211_NODE_HE) &&
         !(ni->ni_he_cap_elem.phy_cap_info[1] &
          IEEE80211_HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD))
         flags &= ~IWX_TLC_MNG_CFG_FLAGS_LDPC_MSK;
 
-    if ((ic->ic_flags & IEEE80211_F_HEON) &&
+    if ((ni->ni_flags & IEEE80211_NODE_HE) &&
         (ni->ni_he_cap_elem.phy_cap_info[3] &
          IEEE80211_HE_PHY_CAP3_DCM_MAX_CONST_RX_MASK))
         flags |= IWX_TLC_MNG_CFG_FLAGS_HE_DCM_NSS_1_MSK;
@@ -12122,15 +12122,25 @@ static const struct iwl_dev_info iwl_dev_info_table[] = {
     IWL_DEV_INFO(0x2723, IWL_CFG_ANY, iwl_ax200_cfg_cc, iwl_ax200_name),
     IWL_DEV_INFO(0x2723, 0x1653, iwl_ax200_cfg_cc, iwl_ax200_killer_1650w_name),
     IWL_DEV_INFO(0x2723, 0x1654, iwl_ax200_cfg_cc, iwl_ax200_killer_1650x_name),
+    IWL_DEV_INFO(0x51F0, 0x1691, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690s_name),
+    IWL_DEV_INFO(0x51F0, 0x1692, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690i_name),
+    IWL_DEV_INFO(0x51F1, 0x1692, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690i_name),
+    IWL_DEV_INFO(0x54F0, 0x1691, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690s_name),
+    IWL_DEV_INFO(0x54F0, 0x1692, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690i_name),
+    IWL_DEV_INFO(0x7A70, 0x1691, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690s_name),
+    IWL_DEV_INFO(0x7A70, 0x1692, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690i_name),
+    IWL_DEV_INFO(0x7AF0, 0x1691, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690s_name),
+    IWL_DEV_INFO(0x7AF0, 0x1692, iwlax411_2ax_cfg_so_gf4_a0, iwl_ax411_killer_1690i_name),
     
     /* Qu with Hr */
     IWL_DEV_INFO(0x43F0, 0x0070, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0x43F0, 0x0074, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0x43F0, 0x0078, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0x43F0, 0x007C, iwl_ax201_cfg_qu_hr, NULL),
+    IWL_DEV_INFO(0x43F0, 0x1651, killer1650s_2ax_cfg_qu_b0_hr_b0, iwl_ax201_killer_1650s_name),
+    IWL_DEV_INFO(0x43F0, 0x1652, killer1650i_2ax_cfg_qu_b0_hr_b0, iwl_ax201_killer_1650i_name),
     IWL_DEV_INFO(0x43F0, 0x2074, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0x43F0, 0x4070, iwl_ax201_cfg_qu_hr, NULL),
-    IWL_DEV_INFO(0x43F0, 0x1651, killer1650s_2ax_cfg_qu_b0_hr_b0, iwl_ax201_killer_1650s_name),
     IWL_DEV_INFO(0xA0F0, 0x0070, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0xA0F0, 0x0074, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0xA0F0, 0x0078, iwl_ax201_cfg_qu_hr, NULL),
@@ -12140,6 +12150,7 @@ static const struct iwl_dev_info iwl_dev_info_table[] = {
     IWL_DEV_INFO(0xA0F0, 0x1652, killer1650i_2ax_cfg_qu_b0_hr_b0, NULL),
     IWL_DEV_INFO(0xA0F0, 0x2074, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0xA0F0, 0x4070, iwl_ax201_cfg_qu_hr, NULL),
+    IWL_DEV_INFO(0xA0F0, 0x6074, iwl_ax201_cfg_qu_hr, NULL),
     IWL_DEV_INFO(0x02F0, 0x0070, iwl_ax201_cfg_quz_hr, NULL),
     IWL_DEV_INFO(0x02F0, 0x0074, iwl_ax201_cfg_quz_hr, NULL),
     IWL_DEV_INFO(0x02F0, 0x6074, iwl_ax201_cfg_quz_hr, NULL),
@@ -12563,7 +12574,7 @@ static const struct iwl_dev_info iwl_dev_info_table[] = {
     _IWL_DEV_INFO(IWL_CFG_ANY, IWL_CFG_ANY,
                   IWL_CFG_MAC_TYPE_SO, IWL_CFG_ANY,
                   IWL_CFG_RF_TYPE_HR1, IWL_CFG_ANY,
-                  IWL_CFG_160, IWL_CFG_ANY, IWL_CFG_NO_CDB,
+                  IWL_CFG_NO_160, IWL_CFG_ANY, IWL_CFG_NO_CDB,
                   iwl_cfg_so_a0_hr_a0, iwl_ax101_name),
     _IWL_DEV_INFO(IWL_CFG_ANY, IWL_CFG_ANY,
                   IWL_CFG_MAC_TYPE_SO, IWL_CFG_ANY,
@@ -12580,7 +12591,7 @@ static const struct iwl_dev_info iwl_dev_info_table[] = {
     _IWL_DEV_INFO(IWL_CFG_ANY, IWL_CFG_ANY,
                   IWL_CFG_MAC_TYPE_SOF, IWL_CFG_ANY,
                   IWL_CFG_RF_TYPE_HR1, IWL_CFG_ANY,
-                  IWL_CFG_160, IWL_CFG_ANY, IWL_CFG_NO_CDB,
+                  IWL_CFG_NO_160, IWL_CFG_ANY, IWL_CFG_NO_CDB,
                   iwl_cfg_so_a0_hr_a0, iwl_ax101_name),
     _IWL_DEV_INFO(IWL_CFG_ANY, IWL_CFG_ANY,
                   IWL_CFG_MAC_TYPE_SOF, IWL_CFG_ANY,

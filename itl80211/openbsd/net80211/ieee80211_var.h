@@ -95,15 +95,6 @@ extern int _start(struct kmod_info*, void*);
 
 extern int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
 
-static inline void* _MallocZero(vm_size_t size)
-{
-    void *ret = IOMalloc(size);
-    if (ret != NULL) {
-        bzero(ret, size);
-    }
-    return ret;
-}
-
 /*
  * ppsratecheck(): packets (or events) per second limitation.
  */
@@ -506,7 +497,7 @@ struct ieee80211com {
 	u_int8_t		ic_des_essid[IEEE80211_NWID_LEN];
 	struct ieee80211_channel *ic_des_chan;	/* desired channel */
 	u_int8_t		ic_des_bssid[IEEE80211_ADDR_LEN];
-#if (defined AIRPORT) && (defined USE_APPLE_SUPPLICANT)
+#ifdef USE_APPLE_SUPPLICANT
 	u_int8_t		ic_rsn_ie_override[257];
 #endif
     u_int16_t       ic_deauth_reason;
@@ -659,6 +650,7 @@ struct ieee80211_ess {
 #define IEEE80211_C_AMSDU_IN_AMPDU 0x00020000 /* CAPABILITY: Rx AMSDU inside AMPDU */
 #define IEEE80211_C_TX_AMPDU_SETUP_IN_HW 0x00040000 /* CAPABILITY: BA negotiation in HW */
 #define IEEE80211_C_SUPPORTS_VHT_EXT_NSS_BW 0x00080000  /* CAPABILITY: for 160mhz */
+#define IEEE80211_C_TX_AMPDU_SETUP_IN_RS 0x00100000
 
 /* flags for ieee80211_fix_rate() */
 #define	IEEE80211_F_DOSORT	0x00000001	/* sort rate list */

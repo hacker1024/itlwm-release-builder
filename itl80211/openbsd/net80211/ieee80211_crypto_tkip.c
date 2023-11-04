@@ -84,7 +84,7 @@ ieee80211_tkip_set_key(struct ieee80211com *ic, struct ieee80211_key *k)
 {
 	struct ieee80211_tkip_ctx *ctx;
 
-	ctx = (struct ieee80211_tkip_ctx *)_MallocZero(sizeof(*ctx));
+	ctx = (struct ieee80211_tkip_ctx *)malloc(sizeof(*ctx), 0, 0);
 	if (ctx == NULL)
 		return ENOMEM;
 	/*
@@ -98,7 +98,7 @@ ieee80211_tkip_set_key(struct ieee80211com *ic, struct ieee80211_key *k)
 	} else
 #endif
 	{
-#if (defined AIRPORT) && (defined USE_APPLE_SUPPLICANT)
+#ifdef USE_APPLE_SUPPLICANT
         ctx->txmic = &k->k_key[16];
         ctx->rxmic = &k->k_key[24];
 #else
@@ -117,7 +117,7 @@ ieee80211_tkip_delete_key(struct ieee80211com *ic, struct ieee80211_key *k)
 {
 	if (k->k_priv != NULL) {
 		explicit_bzero(k->k_priv, sizeof(struct ieee80211_tkip_ctx));
-		IOFree(k->k_priv, sizeof(struct ieee80211_tkip_ctx));
+		free(k->k_priv);
 	}
 	k->k_priv = NULL;
 }

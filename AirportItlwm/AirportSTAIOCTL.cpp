@@ -254,7 +254,7 @@ setAUTH_TYPE(OSObject *object, struct apple80211_authtype_data *ad)
 IOReturn AirportItlwm::
 setCIPHER_KEY(OSObject *object, struct apple80211_key *key)
 {
-    XYLog("%s", __FUNCTION__);
+    XYLog("%s\n", __FUNCTION__);
     const char* keydump = hexdump(key->key, key->key_len);
     const char* rscdump = hexdump(key->key_rsc, key->key_rsc_len);
     const char* eadump = hexdump(key->key_ea.octet, APPLE80211_ADDR_LEN);
@@ -309,6 +309,21 @@ setCIPHER_KEY(OSObject *object, struct apple80211_key *key)
     //fInterface->postMessage(APPLE80211_M_CIPHER_KEY_CHANGED);
     return kIOReturnSuccess;
 }
+
+// From Ventura, airport/wifiagent seems that they don't like to accept extra channel flags in the scan result list,
+// if not, the exact behavior is that the wifi list on the control center/menu bar will not refresh after system boot.
+#if __IO80211_TARGET >= __MAC_13_0
+static int ieeeChanFlag2appleScanFlagVentura(int flags)
+{
+    int ret = 0;
+    if (flags & IEEE80211_CHAN_2GHZ)
+        ret |= APPLE80211_C_FLAG_2GHZ;
+    if (flags & IEEE80211_CHAN_5GHZ)
+        ret |= APPLE80211_C_FLAG_5GHZ;
+    ret |= (APPLE80211_C_FLAG_ACTIVE | APPLE80211_C_FLAG_20MHZ);
+    return ret;
+}
+#endif
 
 static int ieeeChanFlag2apple(int flags, int bw)
 {
@@ -1100,7 +1115,12 @@ getSUPPORTED_CHANNELS(OSObject *object, struct apple80211_sup_channel_data *ad)
     for (int i = 0; i < IEEE80211_CHAN_MAX; i++) {
         if (ic->ic_channels[i].ic_freq != 0) {
             ad->supported_channels[ad->num_channels].channel = ieee80211_chan2ieee(ic, &ic->ic_channels[i]);
+#if __IO80211_TARGET < __MAC_13_0
             ad->supported_channels[ad->num_channels].flags = ieeeChanFlag2apple(ic->ic_channels[i].ic_flags, -1);
+#else
+            ad->supported_channels[ad->num_channels].flags = ieeeChanFlag2appleScanFlagVentura(ic->ic_channels[i].ic_flags);
+#endif
+            
             ad->num_channels++;
         }
     }
@@ -1410,7 +1430,11 @@ getSCAN_RESULT(OSObject *object, struct apple80211_scan_result **sr)
     result->asr_cap = fNextNodeToSend->ni_capinfo;
     result->asr_channel.version = APPLE80211_VERSION;
     result->asr_channel.channel = ieee80211_chan2ieee(ic, fNextNodeToSend->ni_chan);
+#if __IO80211_TARGET < __MAC_13_0
     result->asr_channel.flags = ieeeChanFlag2apple(fNextNodeToSend->ni_chan->ic_flags, -1);
+#else
+    result->asr_channel.flags = ieeeChanFlag2appleScanFlagVentura(fNextNodeToSend->ni_chan->ic_flags);
+#endif
     result->asr_noise = -fHalService->getDriverInfo()->getBSSNoise();
     result->asr_rssi = -(0 - IWM_MIN_DBM - fNextNodeToSend->ni_rssi);
     memcpy(result->asr_bssid, fNextNodeToSend->ni_bssid, IEEE80211_ADDR_LEN);
@@ -1429,6 +1453,10 @@ getSCAN_RESULT(OSObject *object, struct apple80211_scan_result **sr)
 IOReturn AirportItlwm::
 setVIRTUAL_IF_CREATE(OSObject *object, struct apple80211_virt_if_create_data* data)
 {
+    // From Ventura, the virtual interface sequence has channged, now temporary disabled the virtual interface creation because it is no functionality. This fix the issue of delaying start time of associating to AP.
+#if __IO80211_TARGET >= __MAC_13_0
+    return kIOReturnUnsupported;
+#else
     struct ether_addr addr;
     struct apple80211_channel chann;
     XYLog("%s role=%d, bsd_name=%s, mac=%s, unk1=%d\n", __FUNCTION__, data->role, data->bsd_name,
@@ -1467,6 +1495,7 @@ setVIRTUAL_IF_CREATE(OSObject *object, struct apple80211_virt_if_create_data* da
         return kIOReturnError;
     }
     return kIOReturnSuccess;
+#endif
 }
 
 IOReturn AirportItlwm::

@@ -106,7 +106,7 @@ public:
     virtual IOReturn getREQUEST_BSS_BLACKLIST(void *) override { return kIOReturnUnsupported; }
     virtual IOReturn getASSOC_READY_STATUS(apple80211_assoc_ready *) override { return kIOReturnUnsupported; }
     virtual IOReturn getTXRX_CHAIN_INFO(apple80211_txrx_chain_info *) override { return kIOReturnUnsupported; }
-    virtual IOReturn getMIMO_STATUS(apple80211_mimo_status *) override { return kIOReturnUnsupported; }
+    //virtual IOReturn getMIMO_STATUS(apple80211_mimo_status *) override { return kIOReturnUnsupported; }
     virtual IOReturn getCUR_PMK(apple80211_pmk *) override { return kIOReturnUnsupported; }
     virtual IOReturn getDYNSAR_DETAIL(apple80211_dynsar_detail *) override { return kIOReturnUnsupported; }
     virtual IOReturn getRANDOMISATION_STATUS(apple80211_mac_randomisation_status *) override { return kIOReturnUnsupported; }
@@ -248,7 +248,7 @@ public:
     virtual IOReturn setDHCP_RENEWAL_DATA(apple80211_dhcp_renewal_data *) override { return kIOReturnUnsupported; }
     virtual IOReturn setMOVING_NETWORK(apple80211_network_flags *) override { return kIOReturnUnsupported; }
     virtual IOReturn setBATTERY_POWERSAVE_CONFIG(apple80211_battery_ps_config *) override { return kIOReturnUnsupported; }
-    virtual IOReturn setMIMO_CONFIG(apple80211_mimo_config *) override { return kIOReturnUnsupported; }
+    //virtual IOReturn setMIMO_CONFIG(apple80211_mimo_config *) override { return kIOReturnUnsupported; }
     virtual IOReturn setWCL_CONFIG_BG_MOTIONPROFILE(apple80211_bg_motion_profile *) override { return kIOReturnUnsupported; }
     virtual IOReturn setWCL_CONFIG_BG_NETWORK(apple80211_bg_network *) override { return kIOReturnUnsupported; }
     virtual IOReturn setWCL_CONFIG_BGSCAN(apple80211_bg_scan *) override { return kIOReturnUnsupported; }
